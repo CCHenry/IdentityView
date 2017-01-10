@@ -1,7 +1,6 @@
 package com.example.henryzheng.identityview;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.view.PagerAdapter;
@@ -27,7 +26,7 @@ public class FigureTurnsViewPager extends RelativeLayout implements ViewPager.On
     LayoutInflater inflater;
     Context context;
     private ViewPager viewPage;
-    List<Bitmap> bitmaps;
+    int count = 0;
     private int _position = 0;
     private BannerItemInitListener bannerItemInitListener;
 
@@ -44,7 +43,6 @@ public class FigureTurnsViewPager extends RelativeLayout implements ViewPager.On
     }
 
     void init() {
-        bitmaps = new ArrayList<>();
         views = new ArrayList<>();
         inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.rl_figure_turns_view_pager, null);
@@ -53,24 +51,19 @@ public class FigureTurnsViewPager extends RelativeLayout implements ViewPager.On
     }
 
 
-    public FigureTurnsViewPager addImageBitmap(Bitmap bitmap) {
-        bitmaps.add(bitmap);
-        return this;
+    public void setCount(int count) {
+        this.count = count;
     }
 
-
     public FigureTurnsViewPager build() {
-        addHeader();
-        for (int i = 0; i < bitmaps.size(); i++) {
+        for (int i = 0; i < count + 2; i++) {
             LayoutInflater inflater = LayoutInflater.from(context);
             View view = inflater.inflate(R.layout.image_view, null);
             ImageView imageView = (ImageView) view.findViewById(R.id.image_view);
             TextView tv = (TextView) view.findViewById(R.id.tv);
             tv.setText(i + 1 + "");
-            imageView.setImageBitmap(bitmaps.get(i));
             views.add(view);
         }
-        addAfter();
         viewPage.setAdapter(new MyPageAdapter());
         viewPage.addOnPageChangeListener(this);
         return this;
@@ -96,23 +89,30 @@ public class FigureTurnsViewPager extends RelativeLayout implements ViewPager.On
         @Override
         public Object instantiateItem(ViewGroup container, int position) {
             // TODO Auto-generated method stub
+            int realLen = views.size();
             View view = (views.get(position));
             CCLog.print("instantiateItem:" + position);
             container.addView(view);
-            ImageView iv= (ImageView) view.findViewById(R.id.image_view);
-            bannerItemInitListener.initItemView(iv);
+            ImageView iv = (ImageView) view.findViewById(R.id.image_view);
+            if (position >= 1 && position <= realLen - 2)
+                bannerItemInitListener.initItemView(iv, position - 1);
+            else if (position == 0) {
+                bannerItemInitListener.initItemView(iv, realLen - 3);
+            } else if (position == realLen - 1)
+                bannerItemInitListener.initItemView(iv, 0);
+
             return view;
         }
     }
-    public void setOnBannerItemInitListener(BannerItemInitListener i){
-        bannerItemInitListener=i;
+
+    public void setOnBannerItemInitListener(BannerItemInitListener i) {
+        bannerItemInitListener = i;
     }
 
     private void addAfter() {
         LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.image_view, null);
         ImageView imageView = (ImageView) view.findViewById(R.id.image_view);
-        imageView.setImageBitmap(bitmaps.get(0));
         TextView tv = (TextView) view.findViewById(R.id.tv);
         tv.setText("after");
         views.add(view);
@@ -122,7 +122,6 @@ public class FigureTurnsViewPager extends RelativeLayout implements ViewPager.On
         LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.image_view, null);
         ImageView imageView = (ImageView) view.findViewById(R.id.image_view);
-        imageView.setImageBitmap(bitmaps.get(bitmaps.size() - 1));
         TextView tv = (TextView) view.findViewById(R.id.tv);
         tv.setText("head");
         views.add(view);
@@ -152,11 +151,14 @@ public class FigureTurnsViewPager extends RelativeLayout implements ViewPager.On
     public void onPageScrollStateChanged(int state) {
         if (state == ViewPager.SCROLL_STATE_IDLE) {
             //滑动静止时，如果是最后一个位置，就令viewpager回到第一个位置，如果是
-            if (_position == bitmaps.size() + 1)
+            if (_position == count + 1) {
                 viewPage.setCurrentItem(1, false);
-            if (_position == 0)
-                viewPage.setCurrentItem(bitmaps.size(), false
+            }
+            if (_position == 0) {
+
+                viewPage.setCurrentItem(count, false
                 );
+            }
         }
     }
 
@@ -182,16 +184,14 @@ public class FigureTurnsViewPager extends RelativeLayout implements ViewPager.On
             int position = 1;
             while (true) {
                 try {
-
                     CCLog.print("Thread sleep");
-
                     Message msg = new Message();
-                    if (position == bitmaps.size() + 2) {
+                    if (position == count + 2) {
                         position = 1;
                     } else
                         Thread.sleep(2000);
 
-                    if ((position != bitmaps.size() + 2) && (position != 1)) {
+                    if ((position != count + 2) && (position != 1)) {
                         msg.what = position;
                         handler.sendMessage(msg);
                     }
